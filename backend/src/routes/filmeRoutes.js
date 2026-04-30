@@ -7,7 +7,7 @@
 // - Organizar as rotas por recurso/entidade
 
 import express from "express";
-import * as FilmeController from "../controllers/tarefaController.js";
+import * as FilmeController from "../controllers/filmeController.js";
 
 // Cria um roteador do Express
 const router = express.Router();

@@ -7,7 +7,7 @@
 // - Chamar os métodos do Model
 // - Retornar as respostas adequadas
 
-import * as FilmeModel from "../models/tarefaModel.js";
+import * as FilmeModel from "../models/filmeModel.js";
 
 /**
  * Retorna todos os filmes em formato JSON

@@ -8,7 +8,7 @@
 // - Preparar a aplicação para ser exportada
 
 import express from "express";
-import filmeRoutes from "./routes/tarefaRoutes.js";
+import filmeRoutes from "./routes/filmeRoutes.js";
 
 // Cria a aplicação Express
 const app = express();
