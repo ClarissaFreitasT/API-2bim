@@ -8,9 +8,20 @@
 
 import app from "./app.js";
 
+import prisma from "./config/prisma.js";
 // Define a porta em que o servidor vai rodar
 // Usa a variável de ambiente PORT se existir, senão usa 3000
 const PORT = process.env.PORT || 3000;
+
+prisma.$connect()
+  .then(() => {
+     console.log("BD conectado!");
+  })
+  .catch((error) => {
+     console.error("Erro ao conectar ao banco de dados:", error)
+  });
+
+
 
 // ========================================
 // INICIALIZAÇÃO DO SERVIDOR
