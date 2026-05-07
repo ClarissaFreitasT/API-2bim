@@ -13,8 +13,8 @@ import * as FilmeModel from "../models/filmeModel.js";
  * Retorna todos os filmes em formato JSON
  * @route GET /filmes
  */
-export function listarFilmes(req, res) {
-  const filmes = FilmeModel.obterTodosFilmes();
+export async function listarFilmes(req, res) {
+  const filmes = await FilmeModel.obterTodosFilmes();
   res.json(filmes);
 }
 
@@ -22,14 +22,14 @@ export function listarFilmes(req, res) {
  * Retorna um filme específico com base no id enviado na URL
  * @route GET /filmes/:id
  */
-export function obterFilme(req, res) {
+export async function obterFilme(req, res) {
   const idNumero = Number(req.params.id);
 
   if (Number.isNaN(idNumero)) {
     return res.status(400).json({ erro: "ID inválido" });
   }
 
-  const filme = FilmeModel.obterFilmePorId(idNumero);
+  const filme = await FilmeModel.obterFilmePorId(idNumero);
 
   if (!filme) {
     return res.status(404).json({ erro: "Filme não encontrado" });
@@ -42,7 +42,7 @@ export function obterFilme(req, res) {
  * Cria um novo filme
  * @route POST /filmes
  */
-export function criarFilme(req, res) {
+export async function criarFilme(req, res) {
   const { nome, data, genero } = req.body;
 
   if (typeof nome !== "string" || nome.trim() === "") {
@@ -57,7 +57,7 @@ export function criarFilme(req, res) {
     return res.status(400).json({ erro: "Gênero é obrigatório" });
   }
 
-  const filmeCriado = FilmeModel.criarNovoFilme(nome, data, genero);
+  const filmeCriado = await FilmeModel.criarNovoFilme(nome, data, genero);
 
   res.status(201).json({
     mensagem: "Filme criado com sucesso!",
@@ -69,7 +69,7 @@ export function criarFilme(req, res) {
  * Atualiza parcialmente um filme existente
  * @route PATCH /filmes/:id
  */
-export function atualizarFilme(req, res) {
+export async function atualizarFilme(req, res) {
   const idNumero = Number(req.params.id);
   const { nome, data, genero } = req.body;
 
@@ -98,7 +98,7 @@ export function atualizarFilme(req, res) {
     return res.status(400).json({ erro: "Gênero inválido" });
   }
 
-  const filmeAtualizado = FilmeModel.atualizarFilme(
+  const filmeAtualizado = await FilmeModel.atualizarFilme(
     idNumero,
     nome,
     data,
@@ -119,14 +119,14 @@ export function atualizarFilme(req, res) {
  * Remove um filme pelo id
  * @route DELETE /filmes/:id
  */
-export function excluirFilme(req, res) {
+export async function excluirFilme(req, res) {
   const idNumero = Number(req.params.id);
 
   if (Number.isNaN(idNumero)) {
     return res.status(400).json({ erro: "ID inválido" });
   }
 
-  const filmeRemovido = FilmeModel.excluirFilme(idNumero);
+  const filmeRemovido = await FilmeModel.excluirFilme(idNumero);
 
   if (!filmeRemovido) {
     return res.status(404).json({ erro: "Filme não encontrado" });
