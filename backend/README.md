@@ -1,8 +1,8 @@
-# API de Tarefas - Arquitetura MVC
+# API de Filmes - Arquitetura MVC
 
 ## 📚 Sobre o Projeto
 
-API REST para gerenciamento de tarefas, desenvolvida com **Node.js** e **Express**, seguindo o padrão de arquitetura **MVC (Model-View-Controller)**.
+API REST para gerenciamento de filmes, desenvolvida com **Node.js** e **Express**, com integração ao banco de dados **MySQL** via **Prisma ORM**, seguindo o padrão de arquitetura **MVC (Model-View-Controller)**.
 
 ## 🏗️ Arquitetura MVC
 
@@ -25,27 +25,32 @@ MVC é um padrão de arquitetura que separa a aplicação em três camadas princ
 ## 📂 Estrutura do Projeto
 
 ```
-api-base-2bimestre/
+backend/
 ├── src/
 │   ├── models/              # Camada de Dados
-│   │   └── tarefaModel.js   # Lógica de negócio das tarefas
+│   │   └── filmeModel.js    # Lógica de negócio dos filmes + Prisma
 │   │
 │   ├── controllers/         # Camada de Controle
-│   │   └── tarefaController.js  # Processa requisições HTTP
+│   │   └── filmeController.js   # Processa requisições HTTP
 │   │
 │   ├── routes/              # Definição de Rotas
-│   │   └── tarefaRoutes.js  # Rotas da API
+│   │   └── filmeRoutes.js   # Rotas da API
 │   │
-│   ├── views/               # Camada de Apresentação (para futuro frontend)
+│   ├── config/              # Configurações
+│   │   └── prisma.js        # Instância do Prisma
+│   │
+│   ├── views/               # Camada de Apresentação
 │   │   └── README.md
 │   │
-│   ├── config/              # Configurações (vazio no momento)
-│   │
 │   ├── app.js               # Configuração do Express
-│   ├── server.js            # Inicialização do servidor
-│   ├── index.js             # Arquivo de teste (opcional)
-│   └── tarefas.js           # Arquivo antigo (pode ser removido)
+│   └── server.js            # Inicialização do servidor
 │
+├── prisma/
+│   ├── schema.prisma        # Schema do banco de dados
+│   ├── migrations/          # Histórico de migrações
+│   └── migration_lock.toml
+│
+├── .env                     # Variáveis de ambiente
 ├── package.json
 └── README.md
 ```
@@ -53,96 +58,228 @@ api-base-2bimestre/
 ## 🔄 Fluxo de uma Requisição
 
 ```
-Cliente → Rota → Controller → Model → Controller → Resposta JSON (View)
+Cliente → Rota → Controller → Model → Banco (Prisma) → Controller → Resposta JSON (View)
 ```
 
 **Exemplo prático:**
 
-1. **Cliente** faz uma requisição: `GET /tarefas`
-2. **Rota** (`tarefaRoutes.js`) identifica a rota e chama o controller
-3. **Controller** (`tarefaController.js`) recebe a requisição
-4. **Controller** chama o **Model** (`tarefaModel.js`) para buscar os dados
-5. **Model** retorna os dados para o **Controller**
-6. **Controller** envia a resposta JSON de volta ao **Cliente**
+1. **Cliente** faz uma requisição: `GET /filmes`
+2. **Rota** (`filmeRoutes.js`) identifica a rota e chama o controller
+3. **Controller** (`filmeController.js`) recebe a requisição
+4. **Controller** chama o **Model** (`filmeModel.js`) para buscar os dados
+5. **Model** usa o **Prisma** para consultar o banco **MySQL**
+6. **Prisma** retorna os dados para o **Model**
+7. **Model** retorna os dados para o **Controller**
+8. **Controller** envia a resposta JSON de volta ao **Cliente**
 
 ## 🚀 Como Executar
 
 ### Instalação
 
+1. Clone o repositório:
+```bash
+git clone <url-do-repositorio>
+cd API-2bim/backend
+```
+
+2. Instale as dependências:
 ```bash
 npm install
 ```
 
-### Iniciar o Servidor
+3. Configure o banco de dados no arquivo `.env`:
+```env
+PORT=3000
+DATABASE_URL = "mysql://usuario:senha@localhost:3306/nome_banco"
+NODE_ENV=development
+```
 
+4. Execute as migrações do Prisma:
+```bash
+npx prisma migrate dev
+```
+
+5. Inicie o servidor:
 ```bash
 npm run dev
 ```
 
 O servidor estará rodando em: `http://localhost:3000`
 
-## 📡 Endpoints da API
+---## 📡 Endpoints da API
 
-### Listar todas as tarefas
+### Listar todos os filmes
 
 ```http
-GET /tarefas
+GET http://localhost:3000/filmes
 ```
 
-### Obter uma tarefa específica
-
-```http
-GET /tarefas/:id
+**Resposta (200):**
+```json
+[
+  {
+    "id": 1,
+    "nome": "Inception",
+    "data": "2010-07-16",
+    "genero": "Ficção Científica"
+  },
+  {
+    "id": 2,
+    "nome": "The Matrix",
+    "data": "1999-03-31",
+    "genero": "Ficção Científica"
+  }
+]
 ```
 
-### Criar uma nova tarefa
+---
+
+### Obter um filme específico
 
 ```http
-POST /tarefas
-Content-Type: application/json
+GET http://localhost:3000/filmes/1
+```
 
+**Resposta (200):**
+```json
 {
-  "descricao": "Minha nova tarefa"
+  "id": 1,
+  "nome": "Inception",
+  "data": "2010-07-16",
+  "genero": "Ficção Científica"
 }
 ```
 
-### Atualizar uma tarefa
-
-```http
-PATCH /tarefas/:id
-Content-Type: application/json
-
+**Resposta (404) - Filme não encontrado:**
+```json
 {
-  "descricao": "Tarefa atualizada",
-  "concluida": true
+  "erro": "Filme não encontrado"
 }
 ```
 
-### Excluir uma tarefa
+---
+
+### Criar um novo filme
 
 ```http
-DELETE /tarefas/:id
+POST http://localhost:3000/filmes
+Content-Type: application/json
+
+{
+  "nome": "Interstellar",
+  "data": "2014-11-07",
+  "genero": "Ficção Científica"
+}
 ```
+
+**Resposta (201):**
+```json
+{
+  "mensagem": "Filme criado com sucesso!",
+  "filme": {
+    "id": 3,
+    "nome": "Interstellar",
+    "data": "2014-11-07",
+    "genero": "Ficção Científica"
+  }
+}
+```
+
+---
+
+### Atualizar um filme (PATCH)
+
+```http
+PATCH http://localhost:3000/filmes/1
+Content-Type: application/json
+
+{
+  "nome": "Inception (Atualizado)"
+}
+```
+
+**Resposta (200):**
+```json
+{
+  "mensagem": "Filme atualizado com sucesso!",
+  "filme": {
+    "id": 1,
+    "nome": "Inception (Atualizado)",
+    "data": "2010-07-16",
+    "genero": "Ficção Científica"
+  }
+}
+```
+
+---
+
+### Excluir um filme
+
+```http
+DELETE http://localhost:3000/filmes/1
+```
+
+**Resposta (200):**
+```json
+{
+  "mensagem": "Filme excluído com sucesso!"
+}
+```
+
+---
+
+## 🧪 Testando a API
+
+### Opção 1: cURL
+
+```bash
+# Listar filmes
+curl http://localhost:3000/filmes
+
+# Criar filme
+curl -X POST http://localhost:3000/filmes \
+  -H "Content-Type: application/json" \
+  -d '{"nome":"Novo Filme","data":"2024-01-01","genero":"Ação"}'
+
+# Atualizar filme
+curl -X PATCH http://localhost:3000/filmes/1 \
+  -H "Content-Type: application/json" \
+  -d '{"nome":"Filme Atualizado"}'
+
+# Deletar filme
+curl -X DELETE http://localhost:3000/filmes/1
+```
+
+### Opção 2: Postman/Insomnia
+
+1. Abra **Postman** ou **Insomnia**
+2. Crie um novo projeto
+3. Importe as requisições acima ou crie manualmente
+4. Defina a URL base: `http://localhost:3000`
+5. Teste cada endpoint
+
+---
 
 ## 🎯 Detalhes das Camadas
 
-### 📊 Model (`models/tarefaModel.js`)
+### 📊 Model (`models/filmeModel.js`)
 
 Responsável por:
 
-- Armazenar dados (em memória, por enquanto)
+- Gerenciar dados via **Prisma ORM**
 - Implementar lógica de negócio
 - Operações CRUD (Create, Read, Update, Delete)
+- Comunicar com o banco MySQL
 
 **Funções principais:**
 
-- `obterTodasTarefas()`
-- `obterTarefaPorId(id)`
-- `criarNovaTarefa(descricao)`
-- `atualizarTarefa(id, descricao, status)`
-- `excluirTarefa(id)`
+- `obterTodosFilmes()` - Retorna todos os filmes
+- `obterFilmePorId(id)` - Busca filme por ID
+- `criarNovoFilme(nome, data, genero)` - Cria novo filme
+- `atualizarFilme(id, nome, data, genero)` - Atualiza filme
+- `excluirFilme(id)` - Deleta filme
 
-### 🎮 Controller (`controllers/tarefaController.js`)
+### 🎮 Controller (`controllers/filmeController.js`)
 
 Responsável por:
 
@@ -150,16 +287,17 @@ Responsável por:
 - Validar dados de entrada
 - Chamar métodos do Model
 - Retornar respostas HTTP apropriadas
+- Tratamento de erros
 
 **Funções principais:**
 
-- `listarTarefas(req, res)`
-- `obterTarefa(req, res)`
-- `criarTarefa(req, res)`
-- `atualizarTarefa(req, res)`
-- `excluirTarefa(req, res)`
+- `listarFilmes(req, res)` - GET /filmes
+- `obterFilme(req, res)` - GET /filmes/:id
+- `criarFilme(req, res)` - POST /filmes
+- `atualizarFilme(req, res)` - PATCH /filmes/:id
+- `excluirFilme(req, res)` - DELETE /filmes/:id
 
-### 🛣️ Routes (`routes/tarefaRoutes.js`)
+### 🛣️ Routes (`routes/filmeRoutes.js`)
 
 Responsável por:
 
@@ -171,9 +309,9 @@ Responsável por:
 
 Responsável por:
 
-- Configurar middlewares
+- Configurar middlewares (JSON parsing, etc)
 - Registrar rotas
-- Configurar tratamento de erros
+- Configurar tratamento de erros (404)
 - Exportar a aplicação configurada
 
 ### 🖥️ Server (`server.js`)
@@ -184,45 +322,86 @@ Responsável por:
 - Iniciar o servidor na porta especificada
 - Separar lógica de configuração da inicialização
 
+---
+
+## 📦 Banco de Dados - Prisma
+
+### Schema (`prisma/schema.prisma`)
+
+```prisma
+model Filme {
+  id     Int    @id @default(autoincrement())
+  nome   String
+  data   String
+  genero String
+}
+```
+
+### Comandos úteis
+
+```bash
+# Visualizar o banco em interface web
+npx prisma studio
+
+# Criar nova migração após alterar schema
+npx prisma migrate dev --name nome_da_migracao
+
+# Aplicar migrações de produção
+npx prisma migrate deploy
+```
+
+---
+
 ## 🔮 Próximos Passos
 
-- [ ] Integrar banco de dados (MongoDB, PostgreSQL, etc.)
-- [ ] Adicionar autenticação e autorização
-- [ ] Implementar validação com bibliotecas (Joi, Yup)
+- [ ] Adicionar autenticação e autorização (JWT)
+- [ ] Implementar validação com bibliotecas (Joi, Zod)
 - [ ] Criar testes unitários e de integração
-- [ ] Adicionar frontend (React, Vue, etc.)
-- [ ] Implementar tratamento de erros centralizado
 - [ ] Adicionar paginação nas listagens
+- [ ] Implementar tratamento de erros centralizado
 - [ ] Documentar API com Swagger
+- [ ] Adicionar relacionamentos entre tabelas
+- [ ] Implementar soft delete
+
+---
 
 ## 🛠️ Tecnologias
 
 - **Node.js**: Ambiente de execução JavaScript
-- **Express**: Framework web minimalista
-- **ES Modules**: Uso de `import/export` ao invés de `require`
+- **Express.js**: Framework web minimalista
+- **Prisma ORM**: ORM para JavaScript/TypeScript
+- **MySQL**: Banco de dados relacional
+- **dotenv**: Gerenciamento de variáveis de ambiente
+
+---
 
 ## 📝 Scripts Disponíveis
 
-```json
-{
-  "dev": "np src/server.js", // Inicia o servidor em modo desenvolvimento
-  "batata": "node src/index.js" // Executa o arquivo de teste
-}
+```bash
+npm run dev     # Inicia o servidor em modo desenvolvimento com nodemon
+npm start       # Inicia o servidor em produção
 ```
 
-## ⚠️ Observações
+---
 
-- Os dados estão armazenados **em memória** e serão perdidos quando o servidor reiniciar
-- Para persistência de dados, será necessário integrar um banco de dados
-- O diretório `views/` está preparado para receber o frontend no futuro
+## ⚠️ Observações Importantes
+
+- A aplicação usa **ES Modules** (import/export ao invés de require)
+- Os dados são persistidos no **MySQL** via **Prisma**
+- As variáveis de ambiente estão no arquivo `.env`
+- Certifique-se de que o MySQL está rodando antes de iniciar a aplicação
+
+---
 
 ## 📖 Aprendizado
 
 Este projeto é ideal para entender:
 
-- ✅ Como estruturar uma API REST
+- ✅ Como estruturar uma API REST funcional
 - ✅ O que é e como aplicar o padrão MVC
 - ✅ Separação de responsabilidades
+- ✅ Como usar Prisma com MySQL
+- ✅ CRUD completo com validações
 - ✅ Boas práticas de organização de código
 - ✅ Como preparar um projeto para crescer
 
