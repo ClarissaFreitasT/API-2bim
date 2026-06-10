@@ -14,10 +14,12 @@ const PORT = process.env.PORT || 3000;
 async function main() {
   try {
     await prisma.$connect();
+    app.locals.dbReady = true;
     console.log("Conexão bem-sucedida com o banco de dados!");
   } catch (error) {
-    console.error("Erro ao conectar ao banco de dados:", error);
-    process.exit(1);
+    app.locals.dbReady = false;
+    console.error("Erro ao conectar ao banco de dados:", error.message);
+    console.warn("A API foi iniciada em modo de fallback. Configure o MySQL e reinicie o servidor para ativar o CRUD.");
   }
 }
 
@@ -26,7 +28,7 @@ process.on("SIGINT", async () => {
   process.exit(0);
 });
 
-main();
+await main();
 
 app.listen(PORT, () => {
   console.log(`Servidor rodando em http://localhost:${PORT}`);

@@ -1,7 +1,13 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
-
-const API_URL = "http://localhost:3000/filmes";
+import { Link } from "react-router-dom";
+import FilmeCard from "../components/FilmeCard";
+import {
+  atualizarFilme,
+  buscarFilmePorId,
+  cadastrarFilme,
+  excluirFilme,
+  listarFilmes,
+} from "../services/filmeService";
 
 function Home() {
   const [filmes, setFilmes] = useState([]);
@@ -10,15 +16,16 @@ function Home() {
   const [genero, setGenero] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [view, setView] = useState("catalogo");
+  const [filmeSelecionado, setFilmeSelecionado] = useState(null);
+  const [filmeEditandoId, setFilmeEditandoId] = useState(null);
 
   const carregarFilmes = async () => {
     setLoading(true);
     setError("");
 
     try {
-      const response = await axios.get(API_URL);
-      setFilmes(response.data);
+      const filmesCarregados = await listarFilmes();
+      setFilmes(filmesCarregados);
     } catch (err) {
       setError("Não foi possível carregar os filmes.");
     } finally {
@@ -30,29 +37,65 @@ function Home() {
     carregarFilmes();
   }, []);
 
-  const cadastrarFilme = async (event) => {
+  const resetarFormulario = () => {
+    setNome("");
+    setData("");
+    setGenero("");
+    setFilmeEditandoId(null);
+    setFilmeSelecionado(null);
+  };
+
+  const handleCadastrarFilme = async (event) => {
     event.preventDefault();
 
     if (!nome.trim() || !data.trim() || !genero.trim()) {
-      setError("Preencha todos os campos para cadastrar um filme.");
+      setError("Preencha todos os campos para cadastrar ou editar um filme.");
       return;
     }
 
     try {
-      await axios.post(API_URL, { nome, data, genero });
-      setNome("");
-      setData("");
-      setGenero("");
+      if (filmeEditandoId) {
+        await atualizarFilme(filmeEditandoId, { nome, data, genero });
+      } else {
+        await cadastrarFilme({ nome, data, genero });
+      }
+
+      resetarFormulario();
       await carregarFilmes();
-      setView("catalogo");
     } catch (err) {
-      setError("Erro ao cadastrar o filme.");
+      setError(filmeEditandoId ? "Erro ao atualizar o filme." : "Erro ao cadastrar o filme.");
     }
   };
 
-  const excluirFilme = async (id) => {
+  const handleSelecionarFilme = async (id) => {
     try {
-      await axios.delete(`${API_URL}/${id}`);
+      const filme = await buscarFilmePorId(id);
+      setFilmeSelecionado(filme);
+      setFilmeEditandoId(null);
+      setNome(filme.nome);
+      setData(filme.data);
+      setGenero(filme.genero);
+    } catch (err) {
+      setError("Erro ao buscar detalhes do filme.");
+    }
+  };
+
+  const handleEditarFilme = async (filme) => {
+    try {
+      const filmeAtualizado = await buscarFilmePorId(filme.id);
+      setFilmeEditandoId(filme.id);
+      setNome(filmeAtualizado.nome);
+      setData(filmeAtualizado.data);
+      setGenero(filmeAtualizado.genero);
+      setFilmeSelecionado(filmeAtualizado);
+    } catch (err) {
+      setError("Erro ao buscar detalhes do filme.");
+    }
+  };
+
+  const handleExcluirFilme = async (id) => {
+    try {
+      await excluirFilme(id);
       setFilmes((filmesAtuais) => filmesAtuais.filter((filme) => filme.id !== id));
     } catch (err) {
       setError("Erro ao excluir o filme.");
@@ -69,30 +112,23 @@ function Home() {
           </div>
 
           <nav className="flex gap-2">
-            <button
-              className={`rounded-full px-4 py-2 text-sm font-medium ${view === "catalogo" ? "bg-blue-600 text-white" : "bg-slate-800 text-slate-300"}`}
-              onClick={() => setView("catalogo")}
-            >
+            <Link className="rounded-full bg-blue-600 px-4 py-2 text-sm font-medium text-white" to="/">
               Catálogo
-            </button>
-            <button
-              className={`rounded-full px-4 py-2 text-sm font-medium ${view === "sobre" ? "bg-blue-600 text-white" : "bg-slate-800 text-slate-300"}`}
-              onClick={() => setView("sobre")}
-            >
+            </Link>
+            <Link className="rounded-full bg-slate-800 px-4 py-2 text-sm font-medium text-slate-300" to="/sobre">
               Sobre
-            </button>
+            </Link>
           </nav>
         </div>
       </header>
 
       <main className="mx-auto max-w-6xl px-6 py-8">
-        {view === "catalogo" ? (
-          <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
+        <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
             <section className="rounded-2xl bg-white p-6 shadow-sm">
               <h2 className="text-xl font-semibold">Cadastrar novo filme</h2>
               <p className="mt-2 text-sm text-slate-500">Adicione um filme para aparecer na lista.</p>
 
-              <form className="mt-5 space-y-3" onSubmit={cadastrarFilme}>
+              <form className="mt-5 space-y-3" onSubmit={handleCadastrarFilme}>
                 <input
                   className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-blue-500"
                   type="text"
@@ -117,9 +153,20 @@ function Home() {
                   onChange={(event) => setGenero(event.target.value)}
                 />
 
-                <button className="w-full rounded-xl bg-blue-600 px-4 py-3 font-medium text-white transition hover:bg-blue-700" type="submit">
-                  Cadastrar Filme
-                </button>
+                <div className="flex gap-2">
+                  <button className="flex-1 rounded-xl bg-blue-600 px-4 py-3 font-medium text-white transition hover:bg-blue-700" type="submit">
+                    {filmeEditandoId ? "Salvar alterações" : "Cadastrar Filme"}
+                  </button>
+                  {filmeEditandoId ? (
+                    <button
+                      className="rounded-xl border border-slate-300 px-4 py-3 font-medium text-slate-600 transition hover:bg-slate-100"
+                      type="button"
+                      onClick={resetarFormulario}
+                    >
+                      Cancelar
+                    </button>
+                  ) : null}
+                </div>
               </form>
             </section>
 
@@ -143,37 +190,27 @@ function Home() {
               ) : (
                 <div className="mt-6 space-y-3">
                   {filmes.map((filme) => (
-                    <article className="rounded-xl border border-slate-200 p-4" key={filme.id}>
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <h3 className="font-semibold text-slate-800">{filme.nome}</h3>
-                          <p className="mt-1 text-sm text-slate-500">Data: {filme.data}</p>
-                          <p className="text-sm text-slate-500">Gênero: {filme.genero}</p>
-                        </div>
-                        <button
-                          className="rounded-lg bg-red-500 px-3 py-2 text-sm font-medium text-white transition hover:bg-red-600"
-                          onClick={() => excluirFilme(filme.id)}
-                        >
-                          Excluir
-                        </button>
-                      </div>
-                    </article>
+                    <FilmeCard
+                      key={filme.id}
+                      filme={filme}
+                      onSelect={handleSelecionarFilme}
+                      onEdit={handleEditarFilme}
+                      onDelete={handleExcluirFilme}
+                    />
                   ))}
                 </div>
               )}
+
+              {filmeSelecionado ? (
+                <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <h3 className="font-semibold text-slate-800">Detalhes do filme</h3>
+                  <p className="mt-2 text-sm text-slate-600">Nome: {filmeSelecionado.nome}</p>
+                  <p className="text-sm text-slate-600">Data: {filmeSelecionado.data}</p>
+                  <p className="text-sm text-slate-600">Gênero: {filmeSelecionado.genero}</p>
+                </div>
+              ) : null}
             </section>
           </div>
-        ) : (
-          <section className="rounded-2xl bg-white p-8 shadow-sm">
-            <h2 className="text-xl font-semibold">Sobre o projeto</h2>
-            <p className="mt-4 text-slate-600">
-              Este projeto mostra um fluxo completo de dados entre React, API REST, Prisma e MySQL, com cadastro e listagem de filmes.
-            </p>
-            <p className="mt-3 text-slate-600">
-              A interface consome os endpoints da API e permite cadastrar e excluir registros diretamente no banco.
-            </p>
-          </section>
-        )}
       </main>
     </div>
   );

@@ -8,10 +8,14 @@
 // - Preparar a aplicação para ser exportada
 
 import express from "express";
+import cors from "cors";
 import filmeRoutes from "./routes/filmeRoutes.js";
 
 // Cria a aplicação Express
 const app = express();
+
+app.locals.dbReady = false;
+app.use(cors());
 
 // ========================================
 // MIDDLEWARES
@@ -34,6 +38,17 @@ app.get("/", (req, res) => {
     versao: "2.0",
     arquitetura: "MVC"
   });
+});
+
+app.use((req, res, next) => {
+  if (req.path.startsWith("/filmes") && !req.app.locals.dbReady) {
+    return res.status(503).json({
+      erro: "Banco de dados indisponível",
+      mensagem: "Configure o MySQL e reinicie a API para ativar o CRUD."
+    });
+  }
+
+  next();
 });
 
 // Registra as rotas de filmes

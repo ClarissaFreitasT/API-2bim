@@ -1,10 +1,38 @@
-# API de Filmes - Arquitetura MVC
+# Backend do Catálogo de Filmes
 
-## 📚 Sobre o Projeto
+API REST para gerenciamento de filmes, desenvolvida com Node.js, Express, Prisma e MySQL.
 
-API REST para gerenciamento de filmes, desenvolvida com **Node.js** e **Express**, com integração ao banco de dados **MySQL** via **Prisma ORM**, seguindo o padrão de arquitetura **MVC (Model-View-Controller)**.
+## Como executar
 
-## 🏗️ Arquitetura MVC
+1. Entre na pasta do backend:
+   ```bash
+   cd backend
+   ```
+
+2. Instale as dependências:
+   ```bash
+   npm install
+   ```
+
+3. Crie um arquivo `.env` com a URL do banco MySQL:
+   ```env
+   PORT=3000
+   DATABASE_URL="mysql://usuario:senha@localhost:3306/nome_do_banco"
+   ```
+
+4. Execute as migrações:
+   ```bash
+   npx prisma migrate dev
+   ```
+
+5. Inicie a API:
+   ```bash
+   npm run dev
+   ```
+
+A API ficará disponível em http://localhost:3000.
+
+## Arquitetura MVC
 
 ### O que é MVC?
 
